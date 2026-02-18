@@ -20,8 +20,15 @@ async function bootstrap() {
   }));
 
   // CORS
+  const corsOrigin = process.env.CORS_ORIGIN;
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  if (isProduction && !corsOrigin) {
+    throw new Error('CORS_ORIGIN must be set when NODE_ENV=production');
+  }
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*', 
+    origin: corsOrigin ? corsOrigin.split(',').map((origin) => origin.trim()) : ['http://localhost:4200'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
