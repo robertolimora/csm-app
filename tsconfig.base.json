@@ -1,0 +1,25 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": ["es2017", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@med-core/api-database": ["libs/api/database/src/index.ts"],
+      "@med-core/api-config": ["libs/api/core/config/src/index.ts"],
+      "@med-core/api-terminal": ["libs/api/core/terminal/src/index.ts"],
+      "@med-core/api-realtime": ["libs/api/realtime/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

@@ -1,0 +1,36 @@
+# Dependências
+node_modules
+npm-debug.log
+
+# Build outputs
+dist
+tmp
+out-tsc
+
+# IDEs e Editores
+.idea
+.vscode
+*.swp
+*.swo
+
+# Git
+.git
+.gitignore
+
+# Ambiente e Docker (não copiar configurações locais para dentro da imagem)
+.env
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Nx Cache
+.nx/cache
+.nx/workspace-data
+
+# Logs
+logs
+*.log
+
+# Misc
+README.md
+LICENSE

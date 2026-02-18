@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepass
+      POSTGRES_DB: medcore
+    ports:
+      - "5432:5432" # Exposed to Host for local migrations
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - medcore-net
+
+  # Cache & Message Broker
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379" # Exposed to Host for local debugging
+    networks:
+      - medcore-net
+
+  # Backend
+  api:
+    build: 
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+      args:
+        # Dummy value for build time if needed by prisma generate, 
+        # actual connection happens at runtime.
+        DATABASE_URL: postgres://admin:securepass@postgres:5432/medcore
+    restart: always
+    environment:
+      DATABASE_URL: postgres://admin:securepass@postgres:5432/medcore
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super_secure_secret_change_me
+      NODE_ENV: production
+      # Allow connection from Gateway/Nginx
+      CORS_ORIGIN: "*"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - medcore-net
+
+  # Frontend (Served via Nginx)
+  web:
+    image: nginx:alpine
+    volumes:
+      - ./dist/apps/web:/usr/share/nginx/html
+    networks:
+      - medcore-net
+
+  # Reverse Proxy (Gateway)
+  gateway:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - medcore-net
+
+volumes:
+  pgdata:
+
+networks:
+  medcore-net:
+    driver: bridge
