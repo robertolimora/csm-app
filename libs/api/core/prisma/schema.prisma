@@ -6,3 +6,108 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
+enum TerminalType {
+  DESK
+  MOBILE
+  KIOSK
+}
+
+enum ConfigScope {
+  GLOBAL
+  UNIT
+  TERMINAL
+  MODULE
+}
+
+enum AppModule {
+  ADMIN
+  RECEPTION
+  MEDICAL
+  PHARMACY
+}
+
+model Unit {
+  id           String        @id @default(cuid())
+  name         String
+  terminals    Terminal[]
+  configValues ConfigValue[]
+}
+
+model Terminal {
+  id           String           @id @default(cuid())
+  name         String
+  ipAddress    String           @unique
+  type         TerminalType
+  isActive     Boolean          @default(true)
+  unitId       String
+  unit         Unit             @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  modules      TerminalModule[]
+  configValues ConfigValue[]
+}
+
+model TerminalModule {
+  id         String    @id @default(cuid())
+  terminalId String
+  module     AppModule
+  terminal   Terminal  @relation(fields: [terminalId], references: [id], onDelete: Cascade)
+
+  @@unique([terminalId, module])
+}
+
+model ConfigKey {
+  id           String        @id @default(cuid())
+  key          String        @unique
+  description  String
+  type         String
+  defaultValue String
+  configValues ConfigValue[]
+}
+
+model ConfigValue {
+  id         String      @id @default(cuid())
+  configKeyId String
+  scope      ConfigScope
+  unitId     String?
+  terminalId String?
+  module     AppModule?
+  value      String
+
+  configKey  ConfigKey   @relation(fields: [configKeyId], references: [id], onDelete: Cascade)
+  unit       Unit?       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  terminal   Terminal?   @relation(fields: [terminalId], references: [id], onDelete: Cascade)
+
+  @@unique([configKeyId, scope, unitId, terminalId, module])
+}
+
+model Role {
+  id       String     @id @default(cuid())
+  name     String     @unique
+  userRoles UserRole[]
+}
+
+model Permission {
+  id       String @id @default(cuid())
+  slug     String @unique
+  resource String
+  action   String
+}
+
+model User {
+  id           String     @id @default(cuid())
+  username     String     @unique
+  fullName     String
+  passwordHash String
+  roles        UserRole[]
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
