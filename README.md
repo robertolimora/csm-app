@@ -1,20 +1,86 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# CSM App Monorepo
 
-# Run and deploy your AI Studio app
+Monorepo Nx com:
 
-This contains everything you need to run your app locally.
+- `apps/api`: API NestJS
+- `apps/web`: Front-end Angular
+- `libs/api/*`: bibliotecas compartilhadas de domínio/infra da API
 
-View your app in AI Studio: https://ai.studio/apps/d2cb2330-26de-4a21-95aa-f3e8d5a7bffe
+## Pré-requisitos
 
-## Run Locally
+- Node.js 20+
+- pnpm 9+
+- Docker e Docker Compose (opcional, para PostgreSQL/Redis)
 
-**Prerequisites:**  Node.js
+## Setup local
 
+1. Instalar dependências:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+pnpm install
+```
+
+2. Gerar Prisma Client:
+
+```bash
+pnpm prisma:generate
+```
+
+3. Subir banco/cache (opcional com Docker):
+
+```bash
+pnpm db:up
+```
+
+4. Configurar variáveis de ambiente (exemplo):
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/medcore
+REDIS_URL=redis://localhost:6379
+PORT=3000
+CORS_ORIGIN=http://localhost:4200
+```
+
+> Em produção, `CORS_ORIGIN` é obrigatório.
+
+## Desenvolvimento
+
+Executar API:
+
+```bash
+pnpm nx serve api
+```
+
+Executar Web:
+
+```bash
+pnpm nx serve web
+```
+
+## Build
+
+Build API:
+
+```bash
+pnpm nx build api
+```
+
+Build Web:
+
+```bash
+pnpm nx build web
+```
+
+## Banco de dados
+
+Gerar migration:
+
+```bash
+pnpm db:migrate
+```
+
+Seed:
+
+```bash
+pnpm db:seed
+```

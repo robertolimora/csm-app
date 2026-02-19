@@ -13,8 +13,9 @@ RUN corepack enable && corepack prepare pnpm@10.30.0 --activate
 # Copie apenas manifests para cache eficiente
 COPY package.json pnpm-lock.yaml nx.json tsconfig.base.json pnpm-workspace.yaml ./
 
-# Instala deps (preferir reprodutível; fallback só se lockfile estiver fora)
-RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
+# Instala deps sem scripts (evita falha do postinstall do Prisma
+# antes do schema existir no contexto de build)
+RUN pnpm install --frozen-lockfile --ignore-scripts || pnpm install --no-frozen-lockfile --ignore-scripts
 
 # Copie o restante do repo
 COPY . .
@@ -46,4 +47,5 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3000
-CMD ["node", "dist/apps/api/main.js"]
+# Compatível com variações de output do Nx/tsc entre ambientes
+CMD ["sh", "-c", "if [ -f dist/apps/api/apps/api/src/main.js ]; then node dist/apps/api/apps/api/src/main.js; elif [ -f dist/apps/api/main.js ]; then node dist/apps/api/main.js; else echo 'API entrypoint not found in dist/apps/api' >&2; find dist/apps/api -maxdepth 5 -type f >&2; exit 1; fi"]
