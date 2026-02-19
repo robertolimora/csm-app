@@ -1,5 +1,4 @@
-import { PrismaClient, TerminalType, ConfigScope, AppModule } from './lib/prisma.service';
-import * as crypto from 'crypto';
+import { PrismaClient, TerminalType, ConfigScope, AppModule } from '@prisma/client';
 
 // Ensure we have a DB URL
 const dbUrl = process.env.DATABASE_URL;
@@ -19,7 +18,6 @@ const prisma = new PrismaClient({
 async function main() {
   console.log('🌱 Iniciando Seed do Banco de Dados...');
 
-  // 1. Criar Unidade Matriz
   const unidade = await prisma.unit.upsert({
     where: { id: 'unit-matriz' },
     update: {},
@@ -29,10 +27,8 @@ async function main() {
     },
   });
 
-  // 2. Criar Terminal de Desenvolvimento (Localhost)
-  // IMPORTANTE: Isso permite que você rode localmente sem ser bloqueado pelo Middleware
-  const terminal = await prisma.terminal.upsert({
-    where: { ipAddress: '127.0.0.1' }, // IP Loopback IPv4
+  await prisma.terminal.upsert({
+    where: { ipAddress: '127.0.0.1' },
     update: {},
     create: {
       name: 'Terminal DEV Local',
@@ -50,7 +46,6 @@ async function main() {
     },
   });
 
-  // Adicionar também ::1 para IPv6 localhost
   await prisma.terminal.upsert({
     where: { ipAddress: '::1' },
     update: {},
@@ -61,14 +56,11 @@ async function main() {
       unitId: unidade.id,
       isActive: true,
       modules: {
-        create: [
-          { module: AppModule.ADMIN }
-        ]
+        create: [{ module: AppModule.ADMIN }]
       }
     },
   });
 
-  // 3. Config Keys Globais
   const configKeyTheme = await prisma.configKey.upsert({
     where: { key: 'system.theme' },
     update: {},
@@ -80,7 +72,7 @@ async function main() {
     }
   });
 
-  const configKeyPayment = await prisma.configKey.upsert({
+  await prisma.configKey.upsert({
     where: { key: 'payment.require_before_consult' },
     update: {},
     create: {
@@ -91,7 +83,6 @@ async function main() {
     }
   });
 
-  // 4. Config Value Específico (Override) para a Unidade Matriz
   await prisma.configValue.upsert({
     where: {
       configKeyId_scope_unitId_terminalId_module: {
@@ -111,15 +102,13 @@ async function main() {
     }
   });
 
-  // 5. Usuário Admin
   const adminRole = await prisma.role.upsert({
     where: { name: 'ADMIN' },
     update: {},
     create: { name: 'ADMIN' }
   });
 
-  // Permission example
-  const permRead = await prisma.permission.upsert({
+  await prisma.permission.upsert({
     where: { slug: 'system.read' },
     update: {},
     create: { slug: 'system.read', resource: 'system', action: 'read' }
@@ -131,7 +120,7 @@ async function main() {
     create: {
       username: 'admin',
       fullName: 'Administrador do Sistema',
-      passwordHash: 'hash_placeholder', // Em prod usar bcrypt
+      passwordHash: 'hash_placeholder',
       roles: {
         create: { roleId: adminRole.id }
       }
@@ -144,7 +133,7 @@ async function main() {
 main()
   .catch((e) => {
     console.error(e);
-    (process as any).exit(1);
+    process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
