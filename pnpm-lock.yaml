@@ -17597,6 +17597,8 @@ snapshots:
 
   typescript@5.9.3: {}
 
+  typescript@5.9.3: {}
+
   uglify-js@3.19.3:
     optional: true
 
