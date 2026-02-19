@@ -47,4 +47,5 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3000
-CMD ["node", "dist/apps/api/apps/api/src/main.js"]
+# Compatível com variações de output do Nx/tsc entre ambientes
+CMD ["sh", "-c", "if [ -f dist/apps/api/apps/api/src/main.js ]; then node dist/apps/api/apps/api/src/main.js; elif [ -f dist/apps/api/main.js ]; then node dist/apps/api/main.js; else echo 'API entrypoint not found in dist/apps/api' >&2; find dist/apps/api -maxdepth 5 -type f >&2; exit 1; fi"]
