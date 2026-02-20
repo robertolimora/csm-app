@@ -13,8 +13,8 @@ export class TerminalContextMiddleware implements NestMiddleware {
     // 1. Extract IP - Trust Proxy must be enabled in main.ts
     const ip = req.ip; 
 
-    // 2. Allow specific endpoints to bypass terminal check (e.g. initial setup)
-    if (req.originalUrl.includes('/api/runtime/setup')) {
+    // 2. Allow specific endpoint to bypass terminal check (e.g. initial setup)
+    if (this.isRuntimeSetupRoute(req)) {
       return next();
     }
 
@@ -44,5 +44,16 @@ export class TerminalContextMiddleware implements NestMiddleware {
     (req as any).terminal = terminal;
 
     next();
+  }
+
+  private isRuntimeSetupRoute(req: Request): boolean {
+    const path = this.normalizePath(req.originalUrl ?? req.url);
+    return path === '/runtime/setup' || path === '/api/runtime/setup';
+  }
+
+  private normalizePath(urlPath: string): string {
+    const [pathname = '/'] = urlPath.split('?');
+    const trimmed = pathname.replace(/\/+$/, '');
+    return trimmed.length > 0 ? trimmed : '/';
   }
 }

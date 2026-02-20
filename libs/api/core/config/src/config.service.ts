@@ -43,7 +43,7 @@ export class ConfigService {
     }
 
     // Fallback to default if nothing found
-    if (!finalValue) {
+    if (finalValue == null) {
       const keyDef = await this.prisma.configKey.findUnique({ where: { key } });
       if (!keyDef) throw new Error(`Config key ${key} not defined.`);
       return JSON.parse(keyDef.defaultValue);
