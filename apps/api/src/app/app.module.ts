@@ -4,6 +4,7 @@ import { ConfigService } from '@med-core/api-config'; // Assuming alias or relat
 import { TerminalContextMiddleware } from '@med-core/api-terminal'; // Assuming alias or relative
 import { RealtimeGateway } from '@med-core/api-realtime'; // Assuming alias
 import { RedisService } from '@med-core/api-realtime';
+import { AuthService } from './auth.service';
 
 // Local Mock Controller for Setup
 import { Controller, Get } from '@nestjs/common';
@@ -40,8 +41,8 @@ export class SharedModule {}
     // Providers needed for the app
     RedisService,
     RealtimeGateway,
-    // Fix: Provide dependencies for Gateway
-    { provide: 'AuthService', useValue: { validateToken: () => ({ username: 'guest' }) } } 
+    AuthService,
+    { provide: 'AuthService', useExisting: AuthService }
   ],
 })
 export class AppModule {

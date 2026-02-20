@@ -1,10 +1,8 @@
-
-import { 
-  WebSocketGateway, 
-  WebSocketServer, 
-  OnGatewayConnection, 
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  OnGatewayConnection,
   OnGatewayDisconnect,
-  SubscribeMessage
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, Inject } from '@nestjs/common';
@@ -17,7 +15,7 @@ export interface AuthService {
 
 @WebSocketGateway({
   cors: { origin: '*' },
-  namespace: 'events'
+  namespace: 'events',
 })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
@@ -32,23 +30,31 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   async handleConnection(client: Socket) {
+    const token = this.extractToken(client);
+
+    if (!token) {
+      this.logger.warn(`Client ${client.id} connection rejected: missing auth token`);
+      client.emit('auth.error', { message: 'Authentication token required' });
+      client.disconnect();
+      return;
+    }
+
     try {
-      // Authenticate handshake
-      const token = client.handshake.auth.token;
-      // In a real scenario, validate this. For now, guest access if token missing in dev
-      const user = token ? await this.authService.validateToken(token) : { username: 'guest' };
-      
+      const user = await this.authService.validateToken(token);
+
       // Identify Terminal from Headers (passed by Nginx via handshake headers or query)
       const terminalId = client.handshake.query.terminalId as string;
       const unitId = client.handshake.query.unitId as string;
 
       // Join Rooms
-      client.join(`global`);
+      client.join('global');
       if (unitId) client.join(`unit:${unitId}`);
       if (terminalId) client.join(`terminal:${terminalId}`);
-      
+
       this.logger.log(`Client connected: ${client.id} (User: ${user.username})`);
-    } catch (e) {
+    } catch {
+      this.logger.warn(`Client ${client.id} connection rejected: invalid auth token`);
+      client.emit('auth.error', { message: 'Invalid authentication token' });
       client.disconnect();
     }
   }
@@ -68,5 +74,19 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
     } else if (scope === 'TERMINAL') {
       this.server.to(`terminal:${target}`).emit(type, payload);
     }
+  }
+
+  private extractToken(client: Socket): string | null {
+    const authToken = client.handshake.auth?.token;
+    if (typeof authToken === 'string' && authToken.trim().length > 0) {
+      return authToken.trim();
+    }
+
+    const authHeader = client.handshake.headers.authorization;
+    if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+      return authHeader.slice(7).trim();
+    }
+
+    return null;
   }
 }
